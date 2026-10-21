@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Turn Apple Notes into clean text for Apple Pages. Keep bold, underline, and spacing; remove source fonts and colors. Runs entirely in your browser.">
+  <title>Apple Notes to Pages Converter</title>
+  <style>
+    @font-face{font-family:AJensonPro-Regular;src:local("AJensonPro-Regular");font-weight:400;font-style:normal}
+    @font-face{font-family:AJensonPro-Bold;src:local("AJensonPro-Bold");font-weight:700;font-style:normal}
+    @font-face{font-family:AJensonPro-It;src:local("AJensonPro-It");font-weight:400;font-style:italic}
+    @font-face{font-family:AJensonPro-BoldIt;src:local("AJensonPro-BoldIt");font-weight:700;font-style:italic}
+
+    :root{color-scheme:dark;--ink:#e7eae3;--muted:#a1a99b;--paper:#111410;--panel:#191d17;--line:#343c30;--green:#bdd4a7}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input,select{font:inherit}button,select,summary{cursor:pointer}button{color:inherit}button:disabled{cursor:default;opacity:.35}button:focus-visible,select:focus-visible,summary:focus-visible,a:focus-visible{outline:2px solid var(--green);outline-offset:4px}
+    .shell{max-width:1360px;margin:auto;padding:0 32px 24px}header{padding:30px 0 25px}h1{font-size:26px;line-height:1.25;font-weight:600;letter-spacing:-.6px;margin:0}header p{max-width:1040px;margin:14px 0 0;color:var(--muted);font-size:13px;line-height:1.75}.instructions{font-size:12px;color:#c2ccb8;margin-top:16px}
+    .workspace{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--panel)}.panel{min-width:0;display:flex;flex-direction:column}.panel+.panel{border-left:1px solid var(--line)}.panel-head{min-height:65px;display:flex;justify-content:space-between;align-items:center;padding:14px 22px;border-bottom:1px solid var(--line);gap:12px}.panel-title{font-weight:600;font-size:14px}.panel-actions{display:flex;gap:18px}.text-button{border:0;background:none;color:var(--muted);padding:4px 0;font-size:12px}.text-button:hover,.download:hover{color:var(--ink)}
+    .input-wrap{position:relative;flex:1;display:flex}.editor{outline:0;min-height:390px;width:100%;padding:24px;overflow-wrap:anywhere;line-height:1.75;white-space:pre-wrap}.editor:focus{box-shadow:inset 0 0 0 2px #bdd4a742}.editor p{margin:0 0 .35em}.editor ul,.editor ol{padding-left:1.5em;margin:.35em 0}.editor li p{margin:0}.editor[data-empty="true"]:before{content:attr(data-placeholder);pointer-events:none;color:#7c8675}.panel-foot{min-height:43px;padding:10px 22px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:10px}
+    .preview-wrap{padding:22px;flex:1;display:flex}.preview-paper{background:#1d231a;width:100%;min-height:345px;padding:20px 22px;border:1px solid #313b2b;border-radius:4px;overflow-wrap:anywhere}.preview{outline:0;font-family:Georgia,"Times New Roman",serif;font-size:16px;line-height:1.65;white-space:pre-wrap}.preview p{margin:0}.preview ul,.preview ol{margin:0;padding-left:1.5em}.preview li p{margin:0}.preview:focus-visible{outline:2px solid var(--green);outline-offset:7px}.preview-empty{color:#7c8675;font:14px/1.6 -apple-system,BlinkMacSystemFont,sans-serif}.copy{border:0;background:var(--green);color:#182211;border-radius:5px;padding:8px 12px;display:flex;align-items:center;gap:7px;font-weight:600;font-size:12px;white-space:nowrap}.copy:hover{background:#d0e3be}.copy svg{width:14px;height:14px}
+    .settings{margin-top:20px;display:flex;justify-content:space-between;gap:22px;align-items:flex-start}.options{display:flex;gap:18px;align-items:center;flex-wrap:wrap}.option{display:flex;align-items:center;gap:8px;font-size:12px;color:#bcc5b5}.option select{border:1px solid var(--line);border-radius:5px;background:var(--panel);font-size:12px;padding:6px 24px 6px 9px;color:var(--ink);max-width:190px}.check{width:15px;height:15px;margin:0;accent-color:var(--green);cursor:pointer}
+    .font-settings{min-width:140px;max-width:440px}.font-settings summary{font-size:12px;color:var(--muted);cursor:pointer;list-style:none;text-align:right;white-space:nowrap}.font-settings summary:after{content:" +";padding-left:5px}.font-settings[open] summary:after{content:" −"}.font-box{border:1px solid var(--line);background:var(--panel);border-radius:7px;padding:16px;margin-top:12px}.font-sample{border:1px dashed #56624c;border-radius:4px;min-height:42px;padding:9px 11px;background:var(--paper);outline:0;font-size:12px}.font-sample:empty:before{content:"Paste a font sample from Pages (optional)";color:#919c88;pointer-events:none}.font-sample:focus{border-color:var(--green)}.font-fields{display:flex;gap:8px;margin-top:12px;align-items:flex-end}.field{display:flex;flex-direction:column;font-size:11px;color:var(--muted);gap:4px;flex:1;min-width:0}.field input{width:100%;font-size:12px;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:4px;padding:6px 8px;min-width:0;outline-color:var(--green)}.size-field{max-width:65px}.small-button{border:1px solid #637454;background:#293323;border-radius:4px;padding:6px 10px;font-size:12px;color:var(--ink)}.reset-font{font-size:11px;margin-top:8px}
+    .status{font-size:12px;color:var(--green);margin-top:14px}.status:empty{display:none}.status.error{color:#f0aa94}.footer-actions{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-top:20px}.credit{font-size:12px;color:var(--muted);text-decoration:none}.credit:hover{color:var(--ink);text-decoration:underline}.download{font-size:12px;color:var(--muted);text-decoration:none;white-space:nowrap;background:none;border:0;padding:0;text-align:left}.download:hover{text-decoration:underline}
+    @media(max-width:1000px){.shell{padding:0 22px 22px}.settings{gap:16px}.options{gap:12px 16px}.preview-wrap{padding:16px}.panel-head{padding:14px 18px}}
+    @media(max-width:700px){.shell{padding:0 16px 20px}header{padding:24px 0 20px}h1{font-size:23px;max-width:300px}.workspace{grid-template-columns:1fr}.panel+.panel{border-left:0;border-top:1px solid var(--line)}.panel-head{padding:12px 16px;min-height:60px}.panel-foot{padding:10px 16px}.editor{padding:20px;min-height:240px}.preview-paper{padding:18px;min-height:240px}.settings{flex-direction:column}.font-settings{width:100%;max-width:none}.font-settings summary{text-align:left}.font-box{max-width:440px}.options{gap:14px}}
+  </style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <h1>Apple Notes to Pages Converter</h1>
+    <p>It’s surprisingly hard to move text from Apple Notes into Apple Pages without losing the formatting. This tool matches your chosen Pages font and size while keeping bold, underline, spacing, and indentation. I made it to turn notes for a book into the format I was writing in Pages.</p>
+    <p class="instructions">Paste your note below → choose your Pages font in Font settings → save the RTF → open it in TextEdit → copy all → paste into Pages.</p>
+  </header>
+  <main>
+    <section class="workspace" aria-label="Notes converter">
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Apple Notes</span><div class="panel-actions"><button class="text-button" id="example">Example</button><button class="text-button" id="clear" disabled>Clear</button></div></div>
+        <div class="input-wrap"><div id="input" class="editor" contenteditable="true" role="textbox" aria-label="Paste your Apple Notes text" aria-multiline="true" data-empty="true" data-placeholder="Paste from Apple Notes…" spellcheck="false"></div></div>
+        <div class="panel-foot"><span id="input-count">0 words</span></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Pages</span><button id="save-rtf" class="copy" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></svg>Save for Pages (.rtf)</button></div>
+        <div class="preview-wrap"><div class="preview-paper"><div id="preview" class="preview" tabindex="0" role="region" aria-label="Cleaned text preview"><div class="preview-empty">Preview</div></div></div></div>
+        <div class="panel-foot"><span id="output-count"></span><span id="font-status"></span></div>
+      </div>
+    </section>
+    <div class="settings">
+      <div><div class="options"><label class="option" for="bullets">List format <select id="bullets"><option value="indents">Tabs, no bullets</option><option value="paragraph-indents">Indents, no bullets</option><option value="paragraphs">Top-level paragraphs</option><option value="keep">Keep as bullets</option></select></label><label class="option"><input id="gap" class="check" type="checkbox" checked>Blank line between top-level items</label><label class="option"><input id="lowercase" class="check" type="checkbox" checked>Lowercase</label></div><div id="option-hint" hidden></div></div>
+      <details class="font-settings" id="font-details"><summary>Font settings</summary><div class="font-box"><div id="font-sample" class="font-sample" contenteditable="true" role="textbox" aria-label="Paste a font sample copied from Pages" aria-multiline="false" spellcheck="false"></div><div class="font-fields"><label class="field">Font family<input id="font-family" type="text" placeholder="Adobe Jenson Pro" maxlength="120"></label><label class="field size-field">Size (pt)<input id="font-size" type="number" min="6" max="144" step="0.5" placeholder="14"></label><button id="apply-font" class="small-button">Apply</button></div><button id="reset-font" class="text-button reset-font">Reset font</button></div></details>
+    </div>
+    <div class="status" id="status" role="status" aria-live="polite"></div>
+    <footer class="footer-actions"><a class="credit" href="https://sowin.io" target="_blank" rel="noopener noreferrer">by Josh Sowin</a><button id="copy" class="download" disabled><span id="copy-label">Copy (font may change)</span></button></footer>
+  </main>
+</div>
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const input = $('input'), preview = $('preview');
+  const blank = '<p><br></p>';
+  const blocked = new Set(['SCRIPT','STYLE','META','LINK','BASE','IFRAME','OBJECT','EMBED','SVG','MATH','IMG','PICTURE','SOURCE','VIDEO','AUDIO','INPUT','TEXTAREA','BUTTON','SELECT','NOSCRIPT','TEMPLATE']);
+  const block = new Set(['P','DIV','SECTION','ARTICLE','MAIN','HEADER','FOOTER','ASIDE','BLOCKQUOTE','H1','H2','H3','H4','H5','H6','PRE','ADDRESS','FIGURE','FIGCAPTION','TABLE','THEAD','TBODY','TFOOT','TR','DL','DT','DD']);
+  let current = {html:'',text:''}, target = {family:'Adobe Jenson Pro',size:'14'}, copyTimer;
+  function escapeHTML(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function message(text, error=false) { $('status').textContent=text; $('status').classList.toggle('error',error); }
+  function styleMap(doc) {
+    const map = new WeakMap();
+    // Read only emphasis declarations from embedded CSS. Never attach pasted styles or assets.
+    try {
+      for (const node of doc.querySelectorAll('style')) {
+        const sheet = new CSSStyleSheet(); sheet.replaceSync(node.textContent);
+        const rules = list => { for (const rule of list) {
+          if (rule.selectorText && rule.style) {
+            try { for (const el of doc.querySelectorAll(rule.selectorText)) {
+              const s=map.get(el)||{};
+              for (const key of ['fontWeight','fontStyle','textDecoration','textDecorationLine','whiteSpace','fontFamily','fontSize']) if(rule.style[key]) s[key]=rule.style[key];
+              map.set(el,s);
+            }} catch {}
+          } else if (rule.cssRules) rules(rule.cssRules);
+        }};
+        rules(sheet.cssRules);
+      }
+    } catch {}
+    return map;
+  }
+  function localStyle(el, map) {
+    const s={...(map.get(el)||{})};
+    for(const k of ['fontWeight','fontStyle','textDecoration','textDecorationLine','whiteSpace','fontFamily','fontSize']) if(el.style[k]) s[k]=el.style[k];
+    return s;
+  }
+  function marksFor(el, parent, map) {
+    const s=localStyle(el,map), m={...parent};
+    if(['B','STRONG'].includes(el.tagName)) m.bold=true;
+    if(['I','EM'].includes(el.tagName)) m.italic=true;
+    if(el.tagName==='U') m.underline=true;
+    if(['S','STRIKE','DEL'].includes(el.tagName)) m.strike=true;
+    if(el.tagName==='PRE') m.pre=true;
+    if(s.fontWeight) { const w=s.fontWeight; if(w==='normal'||w==='400'||w==='lighter') m.bold=false; else if(w==='bold'||w==='bolder'||Number(w)>=600) m.bold=true; }
+    if(s.fontStyle) m.italic=/italic|oblique/.test(s.fontStyle);
+    const decoration=(s.textDecorationLine||'')+' '+(s.textDecoration||'');
+    if(decoration.includes('underline')) m.underline=true;
+    if(decoration.includes('line-through')) m.strike=true;
+    if(s.whiteSpace) m.pre=/pre|break-spaces/.test(s.whiteSpace);
+    return m;
+  }
+  function marked(text,m) {
+    let h=escapeHTML(text);
+    if(m.pre) h=h.replace(/\r\n?|\n/g,'<br>'); else h=h.replace(/[\t\r\n ]+/g,' ');
+    if(m.strike) h='<s>'+h+'</s>';
+    if(m.underline) h='<u>'+h+'</u>';
+    if(m.italic) h='<em>'+h+'</em>';
+    if(m.bold) h='<strong>'+h+'</strong>';
+    return h;
+  }
+  function normalize(html,options={}) {
+    const doc=new DOMParser().parseFromString(html,'text/html'), map=styleMap(doc);
+    const settings={bullets:'indents',gap:true,...options};
+    function flow(nodes,parent={},depth=0) {
+      const out=[];let line='';
+      const flush=()=>{if(line.trim()){out.push({tag:'p',html:line.trim()});line='';}else line='';};
+      function visit(node,m) {
+        if(node.nodeType===3){ if(!node.textContent.trim()&&!line&&!m.pre)return;line+=marked(node.textContent,m);return; }
+        if(node.nodeType!==1||blocked.has(node.tagName))return;
+        const tag=node.tagName, next=marksFor(node,m,map);
+        if(node.hasAttribute('hidden') || /^(none)$/i.test(node.style.display) || node.getAttribute('aria-hidden')==='true') return;
+        if(tag==='BR'){line+='<br>';return;}
+        if((tag==='UL'||tag==='OL')&&!settings.safe) {
+          flush();const items=[];let loose=[];
+          const meaningful=p=>{const el=doc.createElement('div');el.innerHTML=p.html;return !!el.textContent.trim();};
+          const addItem=content=>{
+            // A copied selection may start inside several empty list wrappers.
+            // Promote their real items instead of drawing empty parent bullets.
+            if(content.some(b=>b.tag==='p'&&meaningful(b))||!content.some(b=>b.tag!=='p')){if(content.length)items.push(content);}
+            else for(const b of content)if(b.tag!=='p')items.push(...b.items);
+          };
+          const flushLoose=()=>{if(loose.length){addItem(flow(loose,next,depth+1));loose=[];}};
+          for(const child of node.childNodes) {
+            if(child.nodeType===1&&child.tagName==='LI') {
+              flushLoose();const content=flow(child.childNodes,marksFor(child,next,map),depth+1);addItem(content.length?content:[{tag:'p',html:'<br>'}]);
+            } else if(child.nodeType===1&&(child.tagName==='UL'||child.tagName==='OL')) {
+              flushLoose();const nested=flow([child],next,depth+1);
+              // Apple Notes can place a nested list beside, rather than inside,
+              // its parent LI. It still belongs to the preceding real item.
+              if(items.length)items.at(-1).push(...nested);else addItem(nested);
+            } else loose.push(child);
+          }
+          flushLoose();
+          const cleanItems=items.flatMap(item=>!item.some(b=>b.tag==='p'&&meaningful(b))&&item.some(b=>b.tag!=='p')?item.flatMap(b=>b.tag==='p'?[]:b.items):[item]);
+          if(cleanItems.length)out.push({tag:tag.toLowerCase(),items:cleanItems,start:tag==='OL'&&Number(node.getAttribute('start'))>1?Number(node.getAttribute('start')):1});
+          return;
+        }
+        if(block.has(tag)||tag==='LI') {
+          flush();const children=flow(node.childNodes,next,depth);
+          if(children.length)out.push(...children);else if(['P','DIV','PRE','LI'].includes(tag))out.push({tag:'p',html:'<br>'});
+          return;
+        }
+        if(tag==='HR'){flush();out.push({tag:'p',html:'<br>'});return;}
+        if(['TD','TH'].includes(tag)&&line)line+='\u00a0\u00a0';
+        for(const child of node.childNodes)visit(child,next);
+      }
+      for(const node of nodes)visit(node,parent);
+      flush();return out;
+    }
+    function literalBullet(paragraph) {
+      const temp=doc.createElement('div');temp.innerHTML=paragraph.html;
+      const match=temp.textContent.match(/^([ \t\u00a0]*)(?:[•◦▪‣∙][ \t\u00a0]*)+/u);
+      if(!match)return null;
+      let remaining=match[0].length;const walker=doc.createTreeWalker(temp,NodeFilter.SHOW_TEXT);let text;
+      while(remaining&&(text=walker.nextNode())){const n=Math.min(remaining,text.textContent.length);text.textContent=text.textContent.slice(n);remaining-=n;}
+      for(const el of temp.querySelectorAll('strong,em,u,s'))if(!el.textContent&&!el.querySelector('br'))el.remove();
+      return {paragraph:{...paragraph,html:temp.innerHTML||'<br>'},indent:match[1].replace(/\t/g,'    ').length};
+    }
+    function tidyLists(blocks) {
+      const out=[];let stack=[];
+      for(const b of blocks) {
+        if(b.tag!=='p') {
+          stack=[];
+          b.items=b.items.map(item=>{
+            // Notes sometimes includes a printed bullet inside an actual list item.
+            const first=item.find(x=>x.tag==='p'&&x.html!=='<br>');
+            if(first){const marker=literalBullet(first);if(marker)first.html=marker.paragraph.html;}
+            return tidyLists(item);
+          });
+          if(b.tag==='ul'&&out.at(-1)?.tag==='ul')out.at(-1).items.push(...b.items);else out.push(b);
+          continue;
+        }
+        const marker=literalBullet(b);
+        if(!marker){stack=[];out.push(b);continue;}
+        // Printed markers can span several emphasis runs: remove the whole prefix,
+        // then rebuild one semantic bullet before applying the paragraph setting.
+        while(stack.length&&marker.indent<stack.at(-1).indent)stack.pop();
+        if(!stack.length){let list=out.at(-1);if(list?.tag!=='ul'){list={tag:'ul',items:[],start:1};out.push(list);}stack.push({indent:marker.indent,list});}
+        else if(marker.indent>stack.at(-1).indent){const parent=stack.at(-1).list.items.at(-1),list={tag:'ul',items:[],start:1};parent.push(list);stack.push({indent:marker.indent,list});}
+        stack.at(-1).list.items.push([marker.paragraph]);
+      }
+      return out;
+    }
+    let blocks=flow(doc.body.childNodes,marksFor(doc.body,{},map));
+    if(!settings.safe)blocks=tidyLists(blocks);
+    if(settings.bullets==='paragraphs') {
+      blocks=blocks.flatMap(b=>b.tag==='p'?[b]:b.items.flatMap((item,i)=>i&&settings.gap?[{tag:'p',html:'<br>'},...item]:item));
+    }
+    if(['indents','paragraph-indents'].includes(settings.bullets)) {
+      const isBlank=b=>b?.tag==='p'&&/^\s*(?:<br\s*\/?>)?\s*$/.test(b.html);
+      function indentParagraphs(source,depth=0) {
+        const out=[];
+        for(const b of source) {
+          if(b.tag==='p')out.push({...b,indent:Math.max(0,depth-1),listItem:depth>0});
+          else for(const [i,item] of b.items.entries()) {
+            const group=indentParagraphs(item,depth+1);
+            // A top-level item and all of its descendants stay together.
+            // Only the boundary before the next top-level item gets a gap.
+            if(depth===0&&settings.gap&&i>0&&!isBlank(out.at(-1))&&!isBlank(group[0]))out.push({tag:'p',html:'<br>'});
+            out.push(...group);
+          }
+        }
+        return out;
+      }
+      blocks=indentParagraphs(blocks);
+    }
+    function render(blocks) {
+      return blocks.map(b=>{
+        if(b.tag!=='p')return '<'+b.tag+(b.tag==='ol'&&b.start>1?' start="'+b.start+'"':'')+'>'+b.items.map(item=>'<li>'+render(item)+'</li>').join('')+'</'+b.tag+'>';
+        if(settings.bullets==='paragraph-indents')return '<p'+(b.listItem?' data-indent="'+(b.indent||0)+'" data-indent-kind="outline"'+(b.indent?' style="margin-left:'+b.indent*18+'pt"':''):'')+'>'+b.html+'</p>';
+        // Use characters that can be edited in Pages, rather than a fixed
+        // paragraph margin. A soft line break starts at the same tab level.
+        const prefix='\t'.repeat(b.indent||0);
+        const content=prefix&&b.html!=='<br>'?prefix+b.html.replace(/<br>/g,'<br>'+prefix):b.html;
+        return '<p'+(b.indent?' data-indent="'+b.indent+'" style="white-space:pre-wrap;tab-size:18pt"':'')+'>'+content+'</p>';
+      }).join('');
+    }
+    function plain(blocks,indent=0) {
+      return blocks.map(b=>{
+        if(b.tag==='p') {
+          const tmp=doc.createElement('div');tmp.innerHTML=b.html.replace(/<br\s*\/?\s*>/g,'\n');
+          const prefix='\t'.repeat(b.indent||0);
+          return tmp.textContent==='\n'?'':prefix+tmp.textContent.replace(/\n/g,'\n'+prefix);
+        }
+        return b.items.map((item,i)=>{
+          const lines=plain(item,indent+1).split('\n'), prefix='  '.repeat(indent)+(b.tag==='ol'?(b.start+i)+'. ':'• ');
+          return prefix+lines[0]+lines.slice(1).map(t=>'\n'+(t?'  '.repeat(indent+1)+t:'')).join('');
+        }).join('\n');
+      }).join('\n');
+    }
+    const result={html:render(blocks),text:plain(blocks),paragraphs:blocks.filter(b=>b.tag==='p').length,recovered:!!settings.safe};
+    function sourceText(node) {
+      if(node.nodeType===3)return node.textContent;
+      if(node.nodeType!==1||blocked.has(node.tagName)||node.hasAttribute('hidden')||node.style.display==='none'||node.getAttribute('aria-hidden')==='true')return '';
+      if(node.tagName==='BR')return '\n';
+      const sep=block.has(node.tagName)||['LI','UL','OL','TD','TH'].includes(node.tagName)?'\n':'';
+      return sep+Array.from(node.childNodes,sourceText).join('')+sep;
+    }
+    const words=s=>s.match(/[\p{L}\p{N}]+/gu)||[],counts=new Map();
+    for(const word of words(result.text))counts.set(word,(counts.get(word)||0)+1);
+    let missing=false;for(const word of words(sourceText(doc.body))){const count=counts.get(word)||0;if(!count){missing=true;break;}counts.set(word,count-1);}
+    // Never silently accept a partial conversion. A conservative pass retains
+    // all visible text and emphasis if an unfamiliar list structure is found.
+    if(missing&&!settings.safe)return normalize(html,{...settings,safe:true});
+    return result;
+  }
+  function plainHTML(text) {
+    const root=document.createElement('div');let stack=[];
+    for(const line of text.replace(/\r\n?/g,'\n').split('\n')) {
+      const match=line.match(/^([ \t]*)([•◦▪‣∙*\-]|\d+[.)])\s+(.*)$/);
+      if(match) {
+        const indent=match[1].replace(/\t/g,'    ').length,ordered=/\d/.test(match[2]), tag=ordered?'ol':'ul';
+        while(stack.length&&indent<stack[stack.length-1].indent)stack.pop();
+        if(!stack.length||indent>stack[stack.length-1].indent||stack[stack.length-1].list.tagName.toLowerCase()!==tag) {
+          const list=document.createElement(tag);if(ordered&&parseInt(match[2],10)>1)list.start=parseInt(match[2],10);
+          const parent=stack.length&&indent>stack[stack.length-1].indent?stack[stack.length-1].last:root;
+          if(stack.length&&indent===stack[stack.length-1].indent)stack.pop();
+          (parent||root).append(list);stack.push({indent,list,last:null});
+        }
+        const li=document.createElement('li');li.textContent=match[3];stack[stack.length-1].list.append(li);stack[stack.length-1].last=li;
+      } else {
+        const p=document.createElement('p');if(line)p.textContent=line;else p.append(document.createElement('br'));
+        const indent=line.match(/^[ \t]*/)[0].replace(/\t/g,'    ').length;
+        if(stack.length&&line.trim()&&indent>stack[stack.length-1].indent&&stack[stack.length-1].last)stack[stack.length-1].last.append(p);
+        else {root.append(p);stack=[];}
+      }
+    }
+    return root.innerHTML;
+  }
+  function persist() {try{localStorage.setItem('notes-to-pages-preferences',JSON.stringify({listFormatVersion:2,target,bullets:$('bullets').value,gap:$('gap').checked,lowercase:$('lowercase').checked}));}catch{}}
+  function letterCase(result,enabled) {
+    if(!enabled)return result;
+    const wrapper=document.createElement('div');wrapper.innerHTML=result.html;
+    const walker=document.createTreeWalker(wrapper,NodeFilter.SHOW_TEXT);let text;
+    while((text=walker.nextNode()))text.textContent=text.textContent.toLocaleLowerCase('en-US');
+    return {...result,html:wrapper.innerHTML,text:result.text.toLocaleLowerCase('en-US')};
+  }
+  function outputTypography(root,clipboard=false) {
+    const jenson=/^(adobe jenson pro|ajensonpro-(regular|bold|it|boldit))$/i.test(target.family.replace(/["']/g,'').trim());
+    // Clipboard HTML uses the actual CSS family on every run. PostScript face
+    // identifiers are useful for local preview, but are not portable HTML names.
+    for(const el of [root,...root.querySelectorAll('*')]) {
+      if(target.family) {
+        if(jenson) {
+          const bold=!!el.closest('strong,b'),italic=!!el.closest('em,i');
+          el.style.fontFamily=clipboard?'Adobe Jenson Pro':'AJensonPro-'+(bold?(italic?'BoldIt':'Bold'):(italic?'It':'Regular'));
+          el.style.fontWeight=bold?'700':'400';el.style.fontStyle=italic?'italic':'normal';
+          el.style.fontOpticalSizing='none';el.style.fontSynthesis='none';
+        } else el.style.fontFamily=target.family;
+      }
+      // Cocoa's clipboard HTML sizes are in px corresponding to native points.
+      // The preview uses screen CSS points; the clipboard uses Cocoa's px units.
+      if(target.size)el.style.fontSize=target.size+(clipboard?'px':'pt');
+    }
+  }
+  function update() {
+    current=letterCase(normalize(input.innerHTML,{bullets:$('bullets').value,gap:$('gap').checked}),$('lowercase').checked);
+    const hasText=!!current.text.trim();input.dataset.empty=String(!hasText);
+    $('clear').disabled=!hasText;$('copy').disabled=!hasText;$('save-rtf').disabled=!hasText;
+    $('gap').disabled=$('bullets').value==='keep';
+    $('option-hint').textContent=$('bullets').value==='paragraph-indents'?'Outline levels with invisible markers, without tab characters.':$('bullets').value==='indents'?'Each level is a real tab. Backspace at the start of the text removes one level.':$('bullets').value==='keep'?'Original list structure is kept.':'Top-level marks removed. Nested bullets stay indented.';
+    if(hasText)preview.innerHTML=current.html;
+    else preview.innerHTML='<div class="preview-empty">Preview</div>';
+    preview.removeAttribute('style');if(hasText)outputTypography(preview);
+    const words=current.text.trim()?current.text.trim().split(/\s+/).length:0;
+    $('input-count').textContent=hasText?words+' word'+(words===1?'':'s'):'0 words';
+    $('output-count').textContent=hasText?'Ready':'';
+    $('font-status').textContent=target.family?[target.family,target.size?target.size+' pt':''].filter(Boolean).join(' · '):target.size?target.size+' pt · no font family':'No source font included';
+    clearTimeout(copyTimer);$('copy-label').textContent='Copy (font may change)';
+  }
+  function clipboardPayload() {
+    const wrapper=document.createElement('div');wrapper.innerHTML=current.html;
+    outputTypography(wrapper,true);
+    if(target.family) {
+      const family=/^(adobe jenson pro|ajensonpro-(regular|bold|it|boldit))$/i.test(target.family.replace(/["']/g,'').trim())?'Adobe Jenson Pro':target.family.replace(/["']/g,'');
+      // Cocoa also understands the legacy face attribute. Putting it directly
+      // around each text run avoids relying on DIV or list font inheritance.
+      const walker=document.createTreeWalker(wrapper,NodeFilter.SHOW_TEXT),nodes=[];let text;
+      while((text=walker.nextNode()))nodes.push(text);
+      for(const text of nodes){const font=document.createElement('font'),bold=!!text.parentElement.closest('strong,b'),italic=!!text.parentElement.closest('em,i');font.setAttribute('face',family);font.style.fontFamily=family;font.style.fontWeight=bold?'700':'400';font.style.fontStyle=italic?'italic':'normal';if(target.size)font.style.fontSize=target.size+'px';text.replaceWith(font);font.append(text);}
+    }
+    return {html:(target.family||target.size)?wrapper.outerHTML:current.html,text:current.text};
+  }
+  function rtfPayload() {
+    const family=target.family.replace(/["']/g,'').trim()||'Helvetica';
+    const jenson=/^(adobe jenson pro|ajensonpro-(regular|bold|it|boldit))$/i.test(family);
+    const faces=jenson?['AJensonPro-Regular','AJensonPro-Bold','AJensonPro-It','AJensonPro-BoldIt']:Array(4).fill(family);
+    const halfPoints=Math.round((Number(target.size)||14)*2);
+    function rtfEscape(value) {
+      let out='';for(let i=0;i<value.length;i++){
+        const code=value.charCodeAt(i),char=value[i];
+        if(char==='\\'||char==='{'||char==='}')out+='\\'+char;
+        else if(char==='\t')out+='\\tab ';
+        else if(char==='\n')out+='\\line ';
+        else if(char==='\r')continue;
+        else if(code>126||code<32)out+='\\u'+(code>32767?code-65536:code)+'?';
+        else out+=char;
+      }return out;
+    }
+    const root=document.createElement('div');root.innerHTML=current.html;
+    const levels=Math.max(8,...Array.from(root.querySelectorAll('[data-indent]'),node=>Number(node.getAttribute('data-indent'))||0));
+    const tabStops=Array.from({length:levels},(_,i)=>'\\tx'+((i+1)*360)).join('');
+    const hasOutline=Array.from(root.children).some(node=>node.getAttribute('data-indent-kind')==='outline');
+    // A margin alone is not a list level. Empty native list markers retain
+    // the hierarchy while keeping the rendered text free of bullets and tabs.
+    const outlineLevels=Array.from({length:9},(_,i)=>'{\\listlevel\\levelnfc23\\levelnfcn23\\leveljc0\\leveljcn0\\levelfollow2\\levelstartat1{\\*\\levelmarker }{\\leveltext\\leveltemplateid'+(i+1)+"\\'00;}{\\levelnumbers;}\\fi0\\li"+(i*360)+'}').join('');
+    const listTable=hasOutline?'{\\*\\listtable{\\list\\listtemplateid1\\listhybrid'+outlineLevels+'{\\listname ;}\\listid1}}{\\*\\listoverridetable{\\listoverride\\listid1\\listoverridecount0\\ls1}}':'';
+    function inline(nodes,marks={bold:false,italic:false,underline:false,strike:false}) {
+      return Array.from(nodes,node=>{
+        if(node.nodeType===3){const face=(marks.bold?1:0)+(marks.italic?2:0);return '{\\f'+face+'\\b'+(marks.bold?1:0)+'\\i'+(marks.italic?1:0)+'\\ul'+(marks.underline?1:0)+'\\strike'+(marks.strike?1:0)+' '+rtfEscape(node.textContent)+'}';}
+        if(node.nodeType!==1)return '';
+        if(node.tagName==='BR')return '\\line ';
+        const next={...marks};if(node.tagName==='STRONG')next.bold=true;if(node.tagName==='EM')next.italic=true;if(node.tagName==='U')next.underline=true;if(node.tagName==='S')next.strike=true;
+        return inline(node.childNodes,next);
+      }).join('');
+    }
+    function blocks(nodes,depth=0,firstPrefix='') {
+      let out='',prefix=firstPrefix;
+      for(const node of nodes){
+        if(node.nodeType!==1)continue;
+        if(node.tagName==='UL'||node.tagName==='OL'){
+          const start=Number(node.getAttribute('start'))||1;let i=0;
+          for(const li of node.children){out+=blocks(li.children,depth+1,node.tagName==='OL'?(start+i)+'.\\tab ':'\\bullet\\tab ');i++;}
+        } else if(node.tagName==='P'){
+          const isBlank=node.childNodes.length===1&&node.firstChild.nodeName==='BR';
+          const isOutline=node.getAttribute('data-indent-kind')==='outline';
+          const paragraphIndent=isOutline?(Number(node.getAttribute('data-indent'))||0):0;
+          const listLevel=isOutline?'\\ls1\\ilvl'+Math.min(8,paragraphIndent):'';
+          out+='\\pard\\plain\\s0\\f0\\fs'+halfPoints+'\\li'+((depth+paragraphIndent)*360)+'\\fi0\\sa0\\sb0'+tabStops+listLevel+' '+prefix+(isBlank?'':inline(node.childNodes))+'\\par\n';prefix='';
+        }
+      }return out;
+    }
+    const table=faces.map((face,i)=>'{\\f'+i+'\\fnil '+rtfEscape(face.replace(/;/g,''))+';}').join('');
+    return '{\\rtf1\\ansi\\ansicpg1252\\uc1\\deff0\\deftab360{\\fonttbl'+table+'}{\\stylesheet{\\s0\\f0\\fs'+halfPoints+' Body;}}'+listTable+'\n'+blocks(root.children)+'}';
+  }
+  $('save-rtf').addEventListener('click',()=>{
+    const url=URL.createObjectURL(new Blob([rtfPayload()],{type:'application/rtf'})),link=document.createElement('a');link.href=url;link.download='notes-for-pages.rtf';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    message('RTF saved.');
+  });
+  input.addEventListener('paste',e=>{
+    const data=e.clipboardData;if(!data)return;
+    e.preventDefault();const html=data.getData('text/html'),text=data.getData('text/plain');
+    if(!html&&!text){message('This tool accepts text. Copy the text of your note, then paste it here.',true);return;}
+    const clean=normalize(html||plainHTML(text),{bullets:'keep',gap:false});
+    // insertHTML keeps the cursor position and native undo history; content is already allowlisted.
+    if(!document.execCommand('insertHTML',false,clean.html)){input.innerHTML+=clean.html;}
+    update();message(clean.recovered?'All text kept. Check indentation.':html?'Ready to save.':'Plain text pasted. To include bold and underline, copy rich text from Notes and paste with ⌘V.');
+  });
+  input.addEventListener('input',()=>{update();message('');});
+  // Prevent the browser from inserting unsanitized drag-and-drop HTML or loading images.
+  input.addEventListener('drop',e=>{e.preventDefault();message('Use copy and paste to bring text in from Notes.');});
+  $('bullets').addEventListener('change',()=>{update();persist();});$('gap').addEventListener('change',()=>{update();persist();});
+  $('lowercase').addEventListener('change',()=>{update();persist();});
+  $('clear').addEventListener('click',()=>{input.innerHTML='';update();message('');input.focus();});
+  $('example').addEventListener('click',()=>{
+    input.innerHTML='<p><strong>Ideas for a slower Sunday</strong></p><p><br></p><ul><li><strong>Start outside.</strong> Take the long way to the coffee shop.<ul><li>Bring a book.</li><li>Leave room for a detour.</li></ul></li><li>Make something <u>just for the fun of it.</u></li><li><strong>Keep the evening free.</strong> A little space goes a long way.</li></ul>';
+    update();message('Example loaded.');
+  });
+  function legacyCopy(payload) {
+    const focused=document.activeElement,selection=window.getSelection(),ranges=[];
+    if(selection)for(let i=0;i<selection.rangeCount;i++)ranges.push(selection.getRangeAt(i).cloneRange());
+    const temp=document.createElement('textarea');temp.value=payload.text;temp.style.cssText='position:fixed;left:-10000px;top:0';document.body.append(temp);temp.select();
+    let wrote=false;const handler=e=>{if(e.clipboardData){e.clipboardData.setData('text/html',payload.html);e.clipboardData.setData('text/plain',payload.text);e.preventDefault();wrote=true;}};
+    document.addEventListener('copy',handler);let ok=false;try{ok=document.execCommand('copy');}catch{}
+    document.removeEventListener('copy',handler);temp.remove();focused?.focus({preventScroll:true});
+    if(selection){selection.removeAllRanges();for(const range of ranges)try{selection.addRange(range);}catch{}}
+    return ok&&wrote;
+  }
+  $('copy').addEventListener('click',async()=>{
+    const payload=clipboardPayload();let ok=false;
+    if(navigator.clipboard?.write&&window.ClipboardItem&&window.isSecureContext) {
+      try{await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([payload.html],{type:'text/html'}),'text/plain':new Blob([payload.text],{type:'text/plain'})})]);ok=true;}catch{}
+    }
+    if(!ok)ok=legacyCopy(payload);
+    if(ok){$('copy-label').textContent='Copied ✓';message('Copied. Browser fonts may change.');copyTimer=setTimeout(()=>$('copy-label').textContent='Copy (font may change)',2500);}
+    else{preview.focus();const range=document.createRange();range.selectNodeContents(preview);const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);message('Clipboard access was blocked. The preview is selected: press ⌘C, then ⌘V in Pages.',true);}
+  });
+  preview.addEventListener('copy',e=>{if(current.text.trim()&&e.clipboardData){const p=clipboardPayload();e.clipboardData.setData('text/html',p.html);e.clipboardData.setData('text/plain',p.text);e.preventDefault();message('Copied. Press ⌘V in Pages.');}});
+  function applyFont() {
+    const family=$('font-family').value.trim(),size=$('font-size').value.trim();
+    if(size&&(!Number.isFinite(Number(size))||Number(size)<6||Number(size)>144)){message('Choose a font size between 6 and 144 pt.',true);return;}
+    const check=document.createElement('span');check.style.fontFamily=family;
+    if(family&&!check.style.fontFamily){message('Enter a valid font family, such as Avenir Next.',true);return;}
+    target={family:check.style.fontFamily,size:size?String(Number(size)):''};persist();update();
+    message(target.family||target.size?'Font saved.':'Font cleared.');
+  }
+  $('apply-font').addEventListener('click',applyFont);
+  for(const id of ['font-family','font-size'])$(id).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();applyFont();}});
+  $('reset-font').addEventListener('click',()=>{target={family:'',size:''};$('font-family').value='';$('font-size').value='';$('font-sample').textContent='';persist();update();message('Font cleared.');});
+  $('font-sample').addEventListener('paste',e=>{
+    e.preventDefault();const html=e.clipboardData?.getData('text/html');
+    if(!html){message('That sample has no font information. Copy a line from Pages with ⌘C, or enter its font and size below.',true);return;}
+    const doc=new DOMParser().parseFromString(html,'text/html'),map=styleMap(doc);let family='',size='';
+    const walker=doc.createTreeWalker(doc.body,NodeFilter.SHOW_TEXT);let text;
+    while((text=walker.nextNode()))if(text.textContent.trim()&&!blocked.has(text.parentElement.tagName))break;
+    if(text)for(let el=text.parentElement;el;el=el.parentElement){const s=localStyle(el,map);if(!family&&s.fontFamily)family=s.fontFamily;if(!size&&s.fontSize)size=s.fontSize;}
+    // Pages also exports its point size as a px value in clipboard HTML.
+    const match=size.match(/^([\d.]+)(pt|px)$/i),points=match?Math.round(Number(match[1])*100)/100:'';
+    if(!family&&!points){message('No font information was included. Enter the font and size shown in Pages below.',true);return;}
+    $('font-family').value=family;$('font-size').value=points;$('font-sample').textContent='Font captured from Pages ✓';applyFont();
+  });
+  $('font-sample').addEventListener('drop',e=>e.preventDefault());
+  try{const saved=JSON.parse(localStorage.getItem('notes-to-pages-preferences')||'null');if(saved){if(saved.target&&typeof saved.target.family==='string'){target.family=saved.target.family.slice(0,120);if(Number(saved.target.size)>=6&&Number(saved.target.size)<=144)target.size=String(Number(saved.target.size));}if(saved.listFormatVersion===2){if(['indents','paragraph-indents','keep','paragraphs'].includes(saved.bullets))$('bullets').value=saved.bullets;if(typeof saved.gap==='boolean')$('gap').checked=saved.gap;}if(typeof saved.lowercase==='boolean')$('lowercase').checked=saved.lowercase;}}catch{}
+  $('font-family').value=target.family;$('font-size').value=target.size;update();
+  // The same pure converter powers the preview and clipboard. Exposed for local verification.
+  window.NotesToPages={normalize,plainHTML,clipboardPayload,letterCase,rtfPayload};
+})();
+</script>
+</body>
+</html>
